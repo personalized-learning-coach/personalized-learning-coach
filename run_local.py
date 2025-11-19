@@ -1,4 +1,4 @@
-from agents.orchestrator import Orchestrator
+from personalized_learning_coach.agents.orchestrator import Orchestrator
 import json
 
 def main():
