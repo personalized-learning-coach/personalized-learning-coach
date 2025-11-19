@@ -1,15 +1,5 @@
-## Summary
-Describe what this PR does.
-
-## Changes
+Describe the change.
 - 
-
-## Checklist
-- [ ] Code runs locally
-- [ ] Added tests (if applicable)
-- [ ] Updated documentation
-- [ ] No secrets committed
-- [ ] I have assigned reviewers
-
-## Related Issues
-Link any associated issue.
+- [ ] Tests added / updated
+- [ ] Documentation updated
+- [ ] No secrets
