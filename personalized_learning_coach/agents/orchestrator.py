@@ -1,16 +1,25 @@
-import json
-from typing import Dict
+from typing import Dict, Any
 from personalized_learning_coach.memory.kv_store import put
-from personalized_learning_coach.tools.grader_tool import grade_question
+from personalized_learning_coach.agents.assessment_agent import AssessmentAgent
+
 
 class Orchestrator:
-    def __init__(self):
-        pass
+    """
+    Handles routing between user action and correct agent.
+    """
 
-    def handle_mission(self, mission: Dict) -> Dict:
+    def handle_mission(self, mission: Dict[str, Any]) -> Dict[str, Any]:
+        user_id = mission.get("user_id", "anon")
         action = mission.get("action")
+
         if action == "start_assessment":
-            session_key = f"session:{mission.get('user_id')}"
-            put(session_key, "current", {"state":"assessment_started", "mission": mission})
-            return {"status":"ok", "route":"assessment", "session_key": session_key}
-        return {"status":"ok", "route":"unknown"}
+            put(f"session:{user_id}", "started_at", {"t": True})
+            agent = AssessmentAgent(user_id)
+            return agent.run(None)
+
+        if action == "submit_assessment":
+            answers = mission.get("answers", {})
+            agent = AssessmentAgent(user_id)
+            return agent.run(answers)
+
+        return {"status": "error", "message": "unknown action"}

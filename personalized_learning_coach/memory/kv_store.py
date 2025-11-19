@@ -2,13 +2,6 @@
 personalized_learning_coach.memory.kv_store
 
 File-backed key-value store with simple session event append & compaction helpers.
-
-- store.json layout: { "<namespace>": { "<key>": <value> } }
-- sessions are stored under namespace "session:<user_id>"
-- append_event(session_namespace, event) appends to events list
-- compact_session(session_namespace, keep_last=5) summarizes and keeps last N events
-
-This file is intentionally simple and synchronous (for prototyping).
 """
 import json
 from pathlib import Path
@@ -71,11 +64,16 @@ def query_prefix(namespace: str, prefix: str) -> Dict[str, Any]:
 def append_event(session_namespace: str, event: Dict[str, Any]) -> None:
     """
     Append an event to a session stored under `session_namespace` (e.g. "session:user123").
-    The session is stored as a dict with keys: session_id, events (list), state (dict), created_at.
+
+    Defensive behavior:
+    - If the namespace is missing, create a full session structure.
+    - If the namespace exists but lacks 'events' or 'state', ensure those keys exist.
+    - Always persist back to disk.
     """
     data = _load()
-    session = data.get(session_namespace, {})
-    # initialize if missing
+    session = data.get(session_namespace)
+
+    # If session is missing or falsy, create a full session object
     if not session:
         session = {
             "session_id": session_namespace,
@@ -83,13 +81,26 @@ def append_event(session_namespace: str, event: Dict[str, Any]) -> None:
             "events": [],
             "state": {},
         }
+
+    # Defensive: ensure required keys exist even if session was previously partial
+    if "session_id" not in session:
+        session["session_id"] = session_namespace
+    if "created_at" not in session:
+        session["created_at"] = _now_iso()
+    session.setdefault("events", [])
+    session.setdefault("state", {})
+
     # event enrichment
     event = dict(event)  # shallow copy
-    event.setdefault("event_id", f"evt-{int(datetime.utcnow().timestamp()*1000)}")
+    # generate a millisecond-based event id if not provided
+    event.setdefault("event_id", f"evt-{int(datetime.utcnow().timestamp() * 1000)}")
     event.setdefault("timestamp", _now_iso())
-    session.setdefault("events", []).append(event)
-    # optionally update last_seen or other quick state aspects
+
+    # Append event and update quick state
+    session["events"].append(event)
     session["state"]["last_event_ts"] = event["timestamp"]
+
+    # persist
     data[session_namespace] = session
     _save(data)
 
@@ -153,4 +164,5 @@ if __name__ == "__main__":
     append_event(ns, {"role": "user", "type": "utterance", "content": {"text": "I struggle with simplifying fractions"}})
     print("Before compact:", get(ns, ""))
     s = compact_session(ns, keep_last=2)
+    import json
     print("After compact:", json.dumps(s, indent=2))
