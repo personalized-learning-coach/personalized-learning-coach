@@ -1,7 +1,7 @@
 import json
 from typing import Dict
-from memory.kv_store import put
-from tools.grader_tool import grade_question
+from personalized_learning_coach.memory.kv_store import put
+from personalized_learning_coach.tools.grader_tool import grade_question
 
 class Orchestrator:
     def __init__(self):

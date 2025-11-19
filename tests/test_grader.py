@@ -1,4 +1,4 @@
-from tools.grader_tool import grade_question
+from personalized_learning_coach.tools.grader_tool import grade_question
 
 def test_exact():
     r = grade_question({"expected":"3/4","answer":"3/4"})
