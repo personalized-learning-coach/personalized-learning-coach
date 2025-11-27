@@ -50,5 +50,13 @@
         }
       ]
     }
+  },
+  "user:test_student": {
+    "skill_profiles": [
+      {
+        "skill_id": "fractions.simplify",
+        "mastery_score": 0.3
+      }
+    ]
   }
 }
