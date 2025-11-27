@@ -27,5 +27,28 @@
       "short_summary": "two | three",
       "compacted_at": "2025-11-19T20:04:23.763190Z"
     }
+  },
+  "user:test_user": {
+    "current_plan": {
+      "week_id": "week_1",
+      "objectives": [
+        "Master fractions addition",
+        "Review multiplication tables"
+      ],
+      "lesson_items": [
+        {
+          "topic": "Fractions Addition",
+          "time_minutes": 30,
+          "learning_goal": "Add fractions with unlike denominators",
+          "exercise_type": "practice_problems"
+        },
+        {
+          "topic": "Multiplication Review",
+          "time_minutes": 15,
+          "learning_goal": "Speed drill for 7x and 8x tables",
+          "exercise_type": "quiz"
+        }
+      ]
+    }
   }
 }
