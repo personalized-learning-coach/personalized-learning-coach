@@ -1,1 +1,31 @@
-{}
+{
+  "session:unittest": {
+    "session_id": "session:unittest",
+    "created_at": "2025-11-19T20:04:23.762813Z",
+    "events": [
+      {
+        "role": "user",
+        "type": "utterance",
+        "content": {
+          "text": "two"
+        },
+        "event_id": "evt-1763600663762",
+        "timestamp": "2025-11-19T20:04:23.762902Z"
+      },
+      {
+        "role": "user",
+        "type": "utterance",
+        "content": {
+          "text": "three"
+        },
+        "event_id": "evt-1763600663763",
+        "timestamp": "2025-11-19T20:04:23.763081Z"
+      }
+    ],
+    "state": {
+      "last_event_ts": "2025-11-19T20:04:23.763081Z",
+      "short_summary": "two | three",
+      "compacted_at": "2025-11-19T20:04:23.763190Z"
+    }
+  }
+}
