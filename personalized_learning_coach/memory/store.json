@@ -58,5 +58,14 @@
         "mastery_score": 0.3
       }
     ]
+  },
+  "user:test_student_prog": {
+    "skill_profiles": [
+      {
+        "skill_id": "fractions.add",
+        "mastery_score": 0.62,
+        "last_practiced": "2025-11-27T18:52:33.644921"
+      }
+    ]
   }
 }
