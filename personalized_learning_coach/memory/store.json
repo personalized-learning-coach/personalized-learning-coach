@@ -67,5 +67,17 @@
         "last_practiced": "2025-11-27T18:52:33.644921"
       }
     ]
+  },
+  "user:test_student_coach": {
+    "skill_profiles": [
+      {
+        "skill_id": "fractions.add",
+        "mastery_score": 0.65
+      },
+      {
+        "skill_id": "multiplication.basic",
+        "mastery_score": 0.9
+      }
+    ]
   }
 }

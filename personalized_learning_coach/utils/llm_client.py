@@ -57,5 +57,16 @@ class LLMClient:
                 "formative_question": "Why do we divide by the greatest common factor?"
             }
             """
+        elif "motivation coach" in (system_instruction or "").lower() or "motivation" in prompt.lower():
+            return """
+            {
+                "message": "Great job improving on your fractions! Consistency is key. You're doing better than 80% of your past self!",
+                "routine": [
+                    "Review one fraction problem before breakfast",
+                    "Do a 5-minute speed drill at 4 PM",
+                    "Celebrate with a small treat after completing the drill"
+                ]
+            }
+            """
         
         return "{}"
