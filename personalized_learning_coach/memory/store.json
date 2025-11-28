@@ -85,5 +85,37 @@
   },
   "user:trace_test_user": {
     "current_plan": {}
+  },
+  "user:eval_user": {
+    "current_plan": {
+      "week_1": {
+        "topic": "Fractions",
+        "goal": "Understand basic concepts",
+        "activities": [
+          "Video: Intro to Fractions",
+          "Practice: Identifying numerators"
+        ]
+      },
+      "week_2": {
+        "topic": "Multiplication",
+        "goal": "Master times tables 1-5",
+        "activities": [
+          "Game: Multiplication Bingo",
+          "Quiz: Times Tables"
+        ]
+      }
+    },
+    "skill_profiles": [
+      {
+        "skill_id": "fractions.add",
+        "mastery_score": 0.9,
+        "last_practiced": "2025-11-27T19:21:36.966745"
+      },
+      {
+        "skill_id": "new.skill",
+        "mastery_score": 0.5,
+        "last_practiced": "2025-11-27T19:21:36.967003"
+      }
+    ]
   }
 }

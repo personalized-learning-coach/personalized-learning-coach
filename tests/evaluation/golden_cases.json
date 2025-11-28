@@ -1,0 +1,133 @@
+[
+    {
+        "id": "planner_01",
+        "agent": "PlannerAgent",
+        "description": "Generate a weekly plan for basic math skills",
+        "input": {
+            "skills": [
+                "addition",
+                "subtraction"
+            ],
+            "goals": [
+                "improve speed"
+            ]
+        },
+        "expected_keys": [
+            "week_1",
+            "week_2"
+        ]
+    },
+    {
+        "id": "planner_02",
+        "agent": "PlannerAgent",
+        "description": "Generate a plan with empty assessment data",
+        "input": {},
+        "expected_keys": [
+            "week_1"
+        ]
+    },
+    {
+        "id": "tutor_01",
+        "agent": "TutorAgent",
+        "description": "Teach a lesson on Fractions",
+        "input": {
+            "topic": "Fractions",
+            "subtopic": "Simplifying"
+        },
+        "expected_keys": [
+            "lesson_content",
+            "worked_example",
+            "practice_problems"
+        ]
+    },
+    {
+        "id": "tutor_02",
+        "agent": "TutorAgent",
+        "description": "Teach a lesson on Multiplication",
+        "input": {
+            "topic": "Multiplication",
+            "difficulty": "beginner"
+        },
+        "expected_keys": [
+            "lesson_content",
+            "formative_question"
+        ]
+    },
+    {
+        "id": "tutor_03",
+        "agent": "TutorAgent",
+        "description": "Teach a lesson on Geometry (General)",
+        "input": {
+            "topic": "Geometry"
+        },
+        "expected_keys": [
+            "lesson_content"
+        ]
+    },
+    {
+        "id": "coach_01",
+        "agent": "CoachAgent",
+        "description": "Provide motivation for improvement",
+        "input": {
+            "skill_id": "fractions",
+            "delta": 0.1,
+            "trend_summary": "improving"
+        },
+        "expected_keys": [
+            "message",
+            "routine"
+        ]
+    },
+    {
+        "id": "coach_02",
+        "agent": "CoachAgent",
+        "description": "Provide encouragement for struggle",
+        "input": {
+            "skill_id": "division",
+            "delta": -0.05,
+            "trend_summary": "needs practice"
+        },
+        "expected_keys": [
+            "message",
+            "routine"
+        ]
+    },
+    {
+        "id": "coach_03",
+        "agent": "CoachAgent",
+        "description": "General motivation check-in",
+        "input": {
+            "context": "weekly_checkin"
+        },
+        "expected_keys": [
+            "message"
+        ]
+    },
+    {
+        "id": "progress_01",
+        "agent": "ProgressAgent",
+        "description": "Update score for existing skill",
+        "input": {
+            "skill_id": "fractions.add",
+            "score": 0.9
+        },
+        "expected_keys": [
+            "new_mastery",
+            "delta",
+            "trend_summary"
+        ]
+    },
+    {
+        "id": "progress_02",
+        "agent": "ProgressAgent",
+        "description": "Update score for new skill",
+        "input": {
+            "skill_id": "new.skill",
+            "score": 0.5
+        },
+        "expected_keys": [
+            "new_mastery",
+            "skill_id"
+        ]
+    }
+]

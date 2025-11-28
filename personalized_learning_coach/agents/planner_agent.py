@@ -36,9 +36,8 @@ class PlannerAgent:
             
             system_prompt = self._load_prompt()
             user_context = f"Assessment Data: {json.dumps(assessment_data)}"
-            full_prompt = f"{system_prompt}\n\n{user_context}"
             
-            response_text = self.llm.generate_content(full_prompt)
+            response_text = self.llm.generate_content(user_context, system_instruction=system_prompt)
             
             try:
                 plan = json.loads(response_text)
