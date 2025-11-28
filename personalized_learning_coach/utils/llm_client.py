@@ -1,4 +1,5 @@
 from typing import Optional
+from observability.logger import get_logger
 
 class LLMClient:
     """
@@ -7,12 +8,22 @@ class LLMClient:
     """
     def __init__(self, model_name: str = "gemini-pro"):
         self.model_name = model_name
+        self.logger = get_logger("LLMClient")
 
     def generate_content(self, prompt: str, system_instruction: Optional[str] = None) -> str:
         """
         Generates content based on the prompt.
         Returns a mock JSON string for now.
         """
+        self.logger.info("Generating content", extra={
+            "event": "llm_request",
+            "data": {
+                "model": self.model_name,
+                "prompt_length": len(prompt),
+                "system_instruction_length": len(system_instruction) if system_instruction else 0
+            }
+        })
+        
         print(f"[LLMClient] Generating content for prompt length: {len(prompt)}")
         if system_instruction:
             print(f"[LLMClient] System instruction length: {len(system_instruction)}")

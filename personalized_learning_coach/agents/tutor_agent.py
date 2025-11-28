@@ -3,6 +3,7 @@ import os
 from typing import Dict, Any
 from personalized_learning_coach.memory.kv_store import get
 from personalized_learning_coach.utils.llm_client import LLMClient
+from observability.logger import get_logger
 
 class TutorAgent:
     """
@@ -12,6 +13,7 @@ class TutorAgent:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.llm = LLMClient()
+        self.logger = get_logger("TutorAgent")
 
     def _load_prompt(self) -> str:
         prompt_path = "prompts/tutor_prompt.md"
@@ -32,6 +34,7 @@ class TutorAgent:
         """
         Conducts a lesson for a specific item.
         """
+        self.logger.info("Starting lesson", extra={"event": "agent_start", "data": {"topic": lesson_item.get("topic")}})
         print(f"TutorAgent: Teaching lesson item {lesson_item.get('topic', 'unknown')}")
         
         system_instruction = self._load_prompt()
@@ -48,6 +51,8 @@ class TutorAgent:
             lesson_content = json.loads(response_text)
         except json.JSONDecodeError:
              print("Error decoding LLM response. Returning empty lesson.")
+             self.logger.error("Failed to decode LLM response", extra={"event": "llm_error"})
              lesson_content = {"error": "Failed to generate lesson"}
              
+        self.logger.info("Finished lesson", extra={"event": "agent_end"})
         return lesson_content

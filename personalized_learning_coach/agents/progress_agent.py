@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, Any, List
 from personalized_learning_coach.memory.kv_store import get, put
+from observability.logger import get_logger
 
 class ProgressAgent:
     """
@@ -10,6 +11,7 @@ class ProgressAgent:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.alpha = 0.3  # Learning rate for EMA
+        self.logger = get_logger("ProgressAgent")
 
     def run(self, lesson_results: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -19,7 +21,10 @@ class ProgressAgent:
         skill_id = lesson_results.get("skill_id")
         current_score = float(lesson_results.get("score", 0.0))
         
+        self.logger.info("Updating progress", extra={"event": "agent_start", "data": {"skill_id": skill_id, "score": current_score}})
+        
         if not skill_id:
+            self.logger.warning("Missing skill_id", extra={"event": "validation_error"})
             return {"error": "Missing skill_id in lesson results"}
 
         print(f"ProgressAgent: Updating progress for {self.user_id} on skill {skill_id}")
@@ -55,6 +60,7 @@ class ProgressAgent:
         # 4. Update memory
         put(f"user:{self.user_id}", "skill_profiles", profiles)
 
+        self.logger.info("Progress updated", extra={"event": "agent_end", "data": {"new_mastery": new_mastery, "delta": delta}})
         return {
             "skill_id": skill_id,
             "new_mastery": round(new_mastery, 3),

@@ -79,5 +79,8 @@
         "mastery_score": 0.9
       }
     ]
+  },
+  "user:log_test_user": {
+    "current_plan": {}
   }
 }

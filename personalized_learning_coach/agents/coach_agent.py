@@ -3,6 +3,7 @@ import os
 from typing import Dict, Any
 from personalized_learning_coach.memory.kv_store import get
 from personalized_learning_coach.utils.llm_client import LLMClient
+from observability.logger import get_logger
 
 class CoachAgent:
     """
@@ -12,6 +13,7 @@ class CoachAgent:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.llm = LLMClient()
+        self.logger = get_logger("CoachAgent")
 
     def _load_prompt(self) -> str:
         prompt_path = "prompts/coach_prompt.md"
@@ -33,6 +35,7 @@ class CoachAgent:
         """
         Generates motivation and tips based on progress.
         """
+        self.logger.info("Generating motivation", extra={"event": "agent_start"})
         print(f"CoachAgent: Generating motivation for {self.user_id}")
         
         system_instruction = self._load_prompt()
@@ -49,9 +52,11 @@ class CoachAgent:
             coach_response = json.loads(response_text)
         except json.JSONDecodeError:
             print("Error decoding LLM response. Returning generic motivation.")
+            self.logger.error("Failed to decode LLM response", extra={"event": "llm_error"})
             coach_response = {
                 "message": "Keep going! You are doing great.",
                 "routine": ["Study for 10 mins", "Review notes"]
             }
             
+        self.logger.info("Finished motivation", extra={"event": "agent_end"})
         return coach_response
