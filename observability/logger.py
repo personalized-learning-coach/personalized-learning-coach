@@ -21,6 +21,14 @@ class JsonFormatter(logging.Formatter):
             log_entry["event"] = record.event
         if hasattr(record, "data"):
             log_entry["data"] = record.data
+        if hasattr(record, "trace_id"):
+            log_entry["trace_id"] = record.trace_id
+        else:
+            # Try to get from context if not explicitly passed
+            # Avoid circular import by importing inside method if needed, 
+            # but better to rely on explicit passing or a separate context getter helper if we want auto-injection.
+            # For now, we rely on the caller (Tracer/Agents) to pass it in 'extra'.
+            pass
             
         return json.dumps(log_entry)
 

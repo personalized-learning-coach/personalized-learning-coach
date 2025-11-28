@@ -82,5 +82,8 @@
   },
   "user:log_test_user": {
     "current_plan": {}
+  },
+  "user:trace_test_user": {
+    "current_plan": {}
   }
 }
