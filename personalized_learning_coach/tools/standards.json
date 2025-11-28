@@ -1,0 +1,26 @@
+[
+    {
+        "id": "CCSS.MATH.CONTENT.3.NF.A.1",
+        "category": "Number & Operations—Fractions",
+        "description": "Understand a fraction 1/b as the quantity formed by 1 part when a whole is partitioned into b equal parts; understand a fraction a/b as the quantity formed by a parts of size 1/b.",
+        "grade": "3"
+    },
+    {
+        "id": "CCSS.MATH.CONTENT.3.OA.A.1",
+        "category": "Operations & Algebraic Thinking",
+        "description": "Interpret products of whole numbers, e.g., interpret 5 × 7 as the total number of objects in 5 groups of 7 objects each.",
+        "grade": "3"
+    },
+    {
+        "id": "CCSS.MATH.CONTENT.4.NF.A.1",
+        "category": "Number & Operations—Fractions",
+        "description": "Explain why a fraction a/b is equivalent to a fraction (n × a)/(n × b) by using visual fraction models.",
+        "grade": "4"
+    },
+    {
+        "id": "CCSS.MATH.CONTENT.5.NBT.B.5",
+        "category": "Number & Operations in Base Ten",
+        "description": "Fluently multiply multi-digit whole numbers using the standard algorithm.",
+        "grade": "5"
+    }
+]
