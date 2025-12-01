@@ -1,19 +1,21 @@
-import sys
-import os
 import json
+import os
+import sys
 import traceback
 
 # Add project root to path
 sys.path.append(os.getcwd())
 
-from personalized_learning_coach.agents.planner_agent import PlannerAgent
-from personalized_learning_coach.agents.tutor_agent import TutorAgent
 from personalized_learning_coach.agents.coach_agent import CoachAgent
+from personalized_learning_coach.agents.planner_agent import PlannerAgent
 from personalized_learning_coach.agents.progress_agent import ProgressAgent
+from personalized_learning_coach.agents.tutor_agent import TutorAgent
+
 
 def load_cases(filepath):
     with open(filepath, "r") as f:
         return json.load(f)
+
 
 def run_evaluation():
     cases_path = "tests/evaluation/golden_cases.json"
@@ -54,10 +56,10 @@ def run_evaluation():
 
             # Run Agent
             output = agent.run(input_data)
-            
+
             # Verify Output Structure
             missing_keys = [k for k in expected_keys if k not in output]
-            
+
             if missing_keys:
                 status = "FAIL"
                 reason = f"Missing keys: {missing_keys}"
@@ -71,20 +73,17 @@ def run_evaluation():
             reason = str(e)
             traceback.print_exc()
 
-        results.append({
-            "id": case_id,
-            "status": status,
-            "reason": reason
-        })
+        results.append({"id": case_id, "status": status, "reason": reason})
         print(f"  -> {status} {reason}\n")
 
     # Summary
     print("-" * 30)
     print(f"Evaluation Complete. Passed: {passed_count}/{len(cases)}")
     print("-" * 30)
-    
+
     if passed_count < len(cases):
         sys.exit(1)
+
 
 if __name__ == "__main__":
     run_evaluation()

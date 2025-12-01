@@ -1,58 +1,102 @@
+# personalized_learning_coach/agents/tutor_agent.py
 import json
 import os
-from typing import Dict, Any
-from personalized_learning_coach.memory.kv_store import get
+from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+
 from personalized_learning_coach.utils.llm_client import LLMClient
 from observability.logger import get_logger
+from observability.tracer import trace_agent
+
+logger = get_logger("TutorAgent")
+
 
 class TutorAgent:
-    """
-    Tutor Agent (Gemini-powered).
-    Teaches lessons, provides examples, and generates practice problems.
-    """
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.llm = LLMClient()
-        self.logger = get_logger("TutorAgent")
+        self.logger = logger
 
-    def _load_prompt(self) -> str:
-        prompt_path = "prompts/tutor_prompt.md"
-        if not os.path.exists(prompt_path):
-             return "You are a helpful tutor."
-        with open(prompt_path, "r") as f:
-            return f.read()
-
-    def _get_student_context(self) -> str:
-        # Fetch skill profile from long-term memory
-        # Assuming structure: user:{user_id} -> skill_profiles
-        user_data = get(f"user:{self.user_id}", "skill_profiles")
-        if not user_data:
-            return "Student context: Unknown skill levels."
-        return f"Student Skill Profile: {json.dumps(user_data)}"
+    def _build_prompt(self, lesson_request: Dict[str, Any]) -> str:
+        topic = lesson_request.get("topic", "General Topic")
+        return (
+            f"Act as an expert tutor. Create a comprehensive and detailed lesson for '{topic}'.\n"
+            "The lesson MUST be detailed enough for a beginner to understand and solve the practice problems without external resources.\n"
+            "Include syntax rules, key concepts, common pitfalls, and usage examples in the overview.\n\n"
+            "Return the lesson in the following MARKDOWN format:\n\n"
+            "## Overview\n"
+            "[Detailed overview text...]\n\n"
+            "## Worked Example\n"
+            "[Explanation text...]\n"
+            "```[language]\n"
+            "[Code snippet]\n"
+            "```\n\n"
+            "## Practice Problems\n"
+            "1. [Question text] (Difficulty: [Level])\n"
+            "2. ...\n"
+        )
 
     def run(self, lesson_item: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Conducts a lesson for a specific item.
-        """
-        self.logger.info("Starting lesson", extra={"event": "agent_start", "data": {"topic": lesson_item.get("topic")}})
-        print(f"TutorAgent: Teaching lesson item {lesson_item.get('topic', 'unknown')}")
+        topic = lesson_item.get("topic", "General Topic") if isinstance(lesson_item, dict) else "General Topic"
+        self.logger.info("TutorAgent run", extra={"topic": topic})
+        prompt = self._build_prompt({"topic": topic})
         
-        system_instruction = self._load_prompt()
-        student_context = self._get_student_context()
-        
-        user_message = f"""
-        Lesson Request: {json.dumps(lesson_item)}
-        Context: {student_context}
-        """
-        
-        response_text = self.llm.generate_content(user_message, system_instruction=system_instruction)
-        
+        lesson_content = {
+            "overview": "",
+            "worked_example": "",
+            "practice_problems": []
+        }
+
         try:
-            lesson_content = json.loads(response_text)
-        except json.JSONDecodeError:
-             print("Error decoding LLM response. Returning empty lesson.")
-             self.logger.error("Failed to decode LLM response", extra={"event": "llm_error"})
-             lesson_content = {"error": "Failed to generate lesson"}
-             
-        self.logger.info("Finished lesson", extra={"event": "agent_end"})
-        return lesson_content
+            resp_text = self.llm.generate_content(prompt, system_instruction=f"Tutor for {topic}")
+            
+            # Parse Markdown Sections
+            current_section = None
+            lines = resp_text.splitlines()
+            
+            overview_lines = []
+            example_lines = []
+            problems_lines = []
+
+            for line in lines:
+                stripped = line.strip()
+                lower_line = stripped.lower()
+                
+                # Flexible Header Detection
+                if lower_line.startswith("#") and "overview" in lower_line:
+                    current_section = "overview"
+                    continue
+                elif lower_line.startswith("#") and "worked example" in lower_line:
+                    current_section = "example"
+                    continue
+                elif lower_line.startswith("#") and "practice problems" in lower_line:
+                    current_section = "problems"
+                    continue
+                
+                if current_section == "overview":
+                    overview_lines.append(line)
+                elif current_section == "example":
+                    example_lines.append(line)
+                elif current_section == "problems":
+                    if stripped and (stripped[0].isdigit() or stripped.startswith("-")):
+                        problems_lines.append(stripped)
+
+            lesson_content["overview"] = "\n".join(overview_lines).strip()
+            lesson_content["worked_example"] = "\n".join(example_lines).strip()
+            lesson_content["practice_problems"] = problems_lines
+            
+            # Fallback: If overview is empty, use the whole text (parsing failed)
+            if not lesson_content["overview"] and not lesson_content["worked_example"]:
+                 # Check if it's an error message
+                 if "Gemini generate raised error" in resp_text:
+                     lesson_content["overview"] = "I'm currently experiencing high traffic (Rate Limit Exceeded). Please wait a moment and try again."
+                 else:
+                     lesson_content["overview"] = resp_text
+
+        except Exception as e:
+            logger.exception("Tutor LLM failed")
+            lesson_content = {"overview": "Short lesson summary: enable Gemini for richer content. (Mock LLM) "}
+
+        return {"lesson_content": lesson_content, "generated_at": datetime.now(timezone.utc).isoformat(), "topic": topic}
+
+        return {"lesson_content": lesson_content, "generated_at": datetime.now(timezone.utc).isoformat(), "topic": topic}

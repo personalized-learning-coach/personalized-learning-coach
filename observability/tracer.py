@@ -1,64 +1,66 @@
-import uuid
+import functools
+import json
 import time
-import contextvars
-from typing import Optional
+from datetime import datetime
 from observability.logger import get_logger
 
-# Context variable to store the current trace ID
-_trace_id_ctx = contextvars.ContextVar("trace_id", default=None)
+logger = get_logger("Tracer")
 
-def get_current_trace_id() -> Optional[str]:
-    return _trace_id_ctx.get()
-
-class Tracer:
-    """
-    Context manager for tracing operations.
-    Manages trace_id and logs start/end of operations with latency.
-    """
-    def __init__(self, operation_name: str, trace_id: Optional[str] = None):
-        self.operation_name = operation_name
-        self.logger = get_logger("Tracer")
-        self.trace_id = trace_id
-        self.token = None
-        self.start_time = None
-
-    def __enter__(self):
-        # Generate new trace ID if not provided and none exists in context
-        current_id = get_current_trace_id()
-        if self.trace_id:
-            new_id = self.trace_id
-        elif current_id:
-            new_id = current_id
-        else:
-            new_id = str(uuid.uuid4())
+def trace_agent(func):
+    """Decorator to trace agent execution inputs and outputs."""
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        agent_name = self.__class__.__name__
+        method_name = func.__name__
+        start_time = time.time()
         
-        # Set the trace ID in context
-        self.token = _trace_id_ctx.set(new_id)
-        self.start_time = time.time()
+        # Log Entry
+        entry_log = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "event": "agent_start",
+            "agent": agent_name,
+            "method": method_name,
+            "args": [str(a) for a in args],
+            "kwargs": {k: str(v) for k, v in kwargs.items()}
+        }
+        _log_trace(entry_log)
         
-        self.logger.info(f"Starting {self.operation_name}", extra={
-            "event": "trace_start",
-            "trace_id": new_id,
-            "data": {"operation": self.operation_name}
-        })
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        duration_ms = (time.time() - self.start_time) * 1000
-        trace_id = get_current_trace_id()
-        
-        status = "error" if exc_type else "success"
-        
-        self.logger.info(f"Finished {self.operation_name}", extra={
-            "event": "trace_end",
-            "trace_id": trace_id,
-            "data": {
-                "operation": self.operation_name,
-                "duration_ms": round(duration_ms, 2),
-                "status": status
+        try:
+            result = func(self, *args, **kwargs)
+            
+            # Log Success
+            duration = time.time() - start_time
+            exit_log = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "event": "agent_end",
+                "agent": agent_name,
+                "method": method_name,
+                "duration_seconds": duration,
+                "result": str(result)[:500] + "..." if len(str(result)) > 500 else str(result)
             }
-        })
-        
-        # Reset context
-        if self.token:
-            _trace_id_ctx.reset(self.token)
+            _log_trace(exit_log)
+            return result
+            
+        except Exception as e:
+            # Log Error
+            duration = time.time() - start_time
+            error_log = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "event": "agent_error",
+                "agent": agent_name,
+                "method": method_name,
+                "duration_seconds": duration,
+                "error": str(e)
+            }
+            _log_trace(error_log)
+            raise e
+            
+    return wrapper
+
+def _log_trace(data):
+    """Append trace data to a JSONL file."""
+    try:
+        with open("traces.jsonl", "a") as f:
+            f.write(json.dumps(data) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to write trace: {e}")

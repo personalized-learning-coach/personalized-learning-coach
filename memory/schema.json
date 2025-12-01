@@ -1,0 +1,46 @@
+{
+    "session_memory": {
+        "type": "object",
+        "description": "Short-lived per-session context",
+        "fields": {
+            "session_id": "string",
+            "current_lesson": "string",
+            "last_question": "string",
+            "recent_responses": "array"
+        }
+    },
+    "long_term_memory": {
+        "type": "object",
+        "description": "Persistent user profile and skills",
+        "fields": {
+            "user_id": "string",
+            "skill_profiles": [
+                {
+                    "skill_id": "string",
+                    "mastery_score": "number",
+                    "last_practiced": "date"
+                }
+            ],
+            "weekly_plans": [
+                {
+                    "plan_id": "string",
+                    "start_date": "date",
+                    "objectives": "array"
+                }
+            ],
+            "preferences": {
+                "learning_style": "string",
+                "daily_available_minutes": "number"
+            }
+        }
+    },
+    "procedural_memory": {
+        "type": "object",
+        "description": "Stored methods and templates",
+        "fields": {
+            "lesson_templates": "array",
+            "grading_heuristics": "object",
+            "common_solution_steps": "object"
+        }
+    }
+}

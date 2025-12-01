@@ -1,95 +1,93 @@
+# personalized_learning_coach/utils/llm_client.py
+import os
+import json
+import logging
 from typing import Optional
-from observability.logger import get_logger
-from observability.tracer import Tracer
+
+logger = logging.getLogger(__name__)
+
+USE_GEMINI = os.environ.get("USE_GEMINI", "0") not in ("0", "", "false", "False")
+
+if USE_GEMINI:
+    # Import here so module still imports when gemini isn't installed.
+    try:
+        from google import genai    # google-genai SDK
+        from google.genai import types
+        genai_available = True
+    except Exception as e:
+        genai_available = False
+        logger.exception("google-genai import failed: %s", e)
+else:
+    genai_available = False
+
 
 class LLMClient:
-    """
-    Simple wrapper for LLM calls.
-    Currently a mock implementation.
-    """
-    def __init__(self, model_name: str = "gemini-pro"):
-        self.model_name = model_name
-        self.logger = get_logger("LLMClient")
+    """LLM client wrapper that uses Google GenAI (Gemini) when enabled.
 
-    def generate_content(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+    - If USE_GEMINI=1 and google-genai is installed and auth is configured,
+      will call the Gemini endpoint.
+    - Otherwise falls back to a harmless mock generator (keeps app usable).
+    """
+
+    def __init__(self, model: Optional[str] = None):
+        # Default reasonably capable model name; change to one you have access to
+        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        self.logger = logger
+
+    def generate_content(self, prompt: str, system_instruction: Optional[str] = None, max_tokens: int = 512) -> str:
+        """Return string content for the given prompt.
+
+        When Gemini is enabled, we call the genai SDK and return concatenated text output.
+        When disabled or if an error occurs, we return a deterministic mock string.
         """
-        Generates content based on the prompt.
-        Returns a mock JSON string for now.
-        """
-        with Tracer("llm_generate"):
-            # Estimate tokens (char / 4)
-            prompt_tokens = len(prompt) // 4
-            
-            self.logger.info("Generating content", extra={
-                "event": "llm_request",
-                "data": {
-                    "model": self.model_name,
-                    "prompt_length": len(prompt),
-                    "system_instruction_length": len(system_instruction) if system_instruction else 0
-                }
+        if not USE_GEMINI or not genai_available:
+            self.logger.info("Gemini disabled or unavailable, returning fallback response")
+            return json.dumps({
+                "summary": "Gemini disabled - enable with USE_GEMINI=1 and set GOOGLE credentials",
+                "prompt_echo": (prompt or "")[:400]
             })
-            
-            print(f"[LLMClient] Generating content for prompt length: {len(prompt)}")
-            if system_instruction:
-                print(f"[LLMClient] System instruction length: {len(system_instruction)}")
+
+        import time
+        max_retries = 3
+        base_delay = 2
+
+        for attempt in range(max_retries):
+            try:
+                # Use the new google-genai SDK pattern
+                client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
                 
-            # Mock logic based on prompt content
-            response_text = "{}"
-            if "curriculum planner" in (system_instruction or "").lower():
-                response_text = """
-                {
-                    "week_1": {
-                        "topic": "Fractions",
-                        "goal": "Understand basic concepts",
-                        "activities": ["Video: Intro to Fractions", "Practice: Identifying numerators"]
-                    },
-                    "week_2": {
-                        "topic": "Multiplication",
-                        "goal": "Master times tables 1-5",
-                        "activities": ["Game: Multiplication Bingo", "Quiz: Times Tables"]
-                    }
-                }
-                """
-            elif "tutor" in (system_instruction or "").lower():
-                response_text = """
-                {
-                    "lesson_content": "To simplify a fraction, divide the top and bottom by the greatest common factor.",
-                    "worked_example": "Simplify 4/8. Divide both by 4. Result: 1/2.",
-                    "practice_problems": [
-                        {"q": "Simplify 3/9", "difficulty": 1},
-                        {"q": "Simplify 12/16", "difficulty": 2},
-                        {"q": "Simplify 15/25", "difficulty": 3}
-                    ],
-                    "expected_answers": {
-                        "Simplify 3/9": "1/3",
-                        "Simplify 12/16": "3/4",
-                        "Simplify 15/25": "3/5"
-                    },
-                    "formative_question": "Why do we divide by the greatest common factor?"
-                }
-                """
-            elif "motivation coach" in (system_instruction or "").lower() or "motivation" in prompt.lower():
-                response_text = """
-                {
-                    "message": "Great job improving on your fractions! Consistency is key. You're doing better than 80% of your past self!",
-                    "routine": [
-                        "Review one fraction problem before breakfast",
-                        "Do a 5-minute speed drill at 4 PM",
-                        "Celebrate with a small treat after completing the drill"
-                    ]
-                }
-                """
-            
-            completion_tokens = len(response_text) // 4
-            
-            # Log metrics
-            self.logger.info("LLM Metrics", extra={
-                "event": "metric",
-                "data": {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                    "total_tokens": prompt_tokens + completion_tokens
-                }
-            })
-            
-            return response_text
+                full_prompt = prompt
+                if system_instruction:
+                    full_prompt = f"System Instruction: {system_instruction}\n\n{prompt}"
+
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=full_prompt,
+                )
+                
+                if hasattr(response, "text") and response.text:
+                    return response.text
+                elif hasattr(response, "candidates") and response.candidates:
+                    # Fallback for candidates
+                    parts = []
+                    for c in response.candidates:
+                        if hasattr(c, "content") and hasattr(c.content, "parts"):
+                            for p in c.content.parts:
+                                if hasattr(p, "text"):
+                                    parts.append(p.text)
+                    if parts:
+                        return "\n".join(parts)
+                
+                return str(response)
+
+            except Exception as e:
+                error_str = str(e)
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        logger.warning(f"Gemini 429 Rate Limit. Retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                
+                logger.exception("Gemini generate failed: %s", e)
+                return json.dumps({"summary": "Gemini generate raised error", "error": str(e)})
