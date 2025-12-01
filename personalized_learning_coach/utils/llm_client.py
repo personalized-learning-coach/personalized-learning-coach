@@ -1,4 +1,3 @@
-# personalized_learning_coach/utils/llm_client.py
 import os
 import json
 import logging
@@ -6,27 +5,12 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-USE_GEMINI = os.environ.get("USE_GEMINI", "0") not in ("0", "", "false", "False")
-
-if USE_GEMINI:
-    # Import here so module still imports when gemini isn't installed.
-    try:
-        from google import genai    # google-genai SDK
-        from google.genai import types
-        genai_available = True
-    except Exception as e:
-        genai_available = False
-        logger.exception("google-genai import failed: %s", e)
-else:
-    genai_available = False
-
-
 class LLMClient:
     """LLM client wrapper that uses Google GenAI (Gemini) when enabled.
 
-    - If USE_GEMINI=1 and google-genai is installed and auth is configured,
-      will call the Gemini endpoint.
-    - Otherwise falls back to a harmless mock generator (keeps app usable).
+    - Checks USE_GEMINI env var at runtime (lazy evaluation).
+    - If USE_GEMINI=1 and google-genai is installed, calls Gemini.
+    - Otherwise falls back to a harmless mock generator.
     """
 
     def __init__(self, model: Optional[str] = None):
@@ -34,13 +18,29 @@ class LLMClient:
         self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
         self.logger = logger
 
+    def _is_gemini_enabled(self) -> bool:
+        """Check if Gemini is enabled and available."""
+        use_gemini = os.environ.get("USE_GEMINI", "0") not in ("0", "", "false", "False")
+        if not use_gemini:
+            return False
+        
+        try:
+            import google.genai
+            return True
+        except ImportError:
+            self.logger.warning("USE_GEMINI=1 but google-genai package not found.")
+            return False
+        except Exception as e:
+            self.logger.exception("Error checking google-genai availability: %s", e)
+            return False
+
     def generate_content(self, prompt: str, system_instruction: Optional[str] = None, max_tokens: int = 512) -> str:
         """Return string content for the given prompt.
 
         When Gemini is enabled, we call the genai SDK and return concatenated text output.
         When disabled or if an error occurs, we return a deterministic mock string.
         """
-        if not USE_GEMINI or not genai_available:
+        if not self._is_gemini_enabled():
             self.logger.info("Gemini disabled or unavailable, returning fallback response")
             return json.dumps({
                 "summary": "Gemini disabled - enable with USE_GEMINI=1 and set GOOGLE credentials",
@@ -48,6 +48,8 @@ class LLMClient:
             })
 
         import time
+        from google import genai
+        
         max_retries = 3
         base_delay = 2
 
