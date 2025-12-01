@@ -2,11 +2,21 @@
 import traceback
 import streamlit as st
 import json
+import os
+
+# Load .env.local if present (local dev)
 try:
     from dotenv import load_dotenv
     load_dotenv(".env.local")
 except ImportError:
     pass
+
+# Inject Streamlit secrets into os.environ (cloud deployment)
+# This ensures LLMClient can find USE_GEMINI and GOOGLE_API_KEY
+if hasattr(st, "secrets"):
+    for key, value in st.secrets.items():
+        if key not in os.environ:
+            os.environ[key] = str(value)
 
 st.set_page_config(page_title="Personalized Learning Coach", layout="centered")
 st.title("Personalized Learning Coach")
