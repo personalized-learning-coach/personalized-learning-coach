@@ -37,8 +37,10 @@ def test_assessment_basic():
     assert len(questions) > 0, "Expected at least one question to be generated"
 
     # Step 2: answer using the expected answers where available
-    answers = {qobj.get("qid"): qobj.get("expected", "") for qobj in questions}
-    r = _run_maybe_async(agent.run, answers)
+    # Fallback questions use "answer", LLM questions might use "answer" or "expected" depending on prompt
+    # The prompt says "answer (A/B/C/D)", so we should use "answer"
+    answers = {qobj.get("qid"): qobj.get("answer", "") for qobj in questions}
+    r = _run_maybe_async(agent.run, {"answers": answers})
 
     assert isinstance(r, dict), "Expected a dict result from agent.run(answers)"
     assert r.get("phase") == "results"
