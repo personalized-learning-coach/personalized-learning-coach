@@ -60,7 +60,7 @@ class AssessmentAgent:
                          except json.JSONDecodeError:
                              pass
 
-            if isinstance(questions, list):
+            if isinstance(questions, list) and len(questions) > 0:
                 # Ensure qids are unique/present and STRINGS
                 for i, q in enumerate(questions):
                     if "qid" not in q:
