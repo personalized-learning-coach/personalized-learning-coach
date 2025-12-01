@@ -2,9 +2,11 @@
 import traceback
 import streamlit as st
 import json
-from dotenv import load_dotenv
-
-load_dotenv(".env.local")
+try:
+    from dotenv import load_dotenv
+    load_dotenv(".env.local")
+except ImportError:
+    pass
 
 st.set_page_config(page_title="Personalized Learning Coach", layout="centered")
 st.title("Personalized Learning Coach")
