@@ -71,26 +71,6 @@ orch = st.session_state.orchestrator
 with st.sidebar:
     st.header("My Learning Paths")
 
-    # --- DEBUG STATUS (Temporary) ---
-    with st.expander("System Status (Debug)", expanded=False):
-        use_gemini_env = os.environ.get("USE_GEMINI")
-        api_key_env = os.environ.get("GOOGLE_API_KEY")
-        
-        st.write(f"USE_GEMINI (env): `{use_gemini_env}`")
-        st.write(f"API Key Present: `{bool(api_key_env)}`")
-        if api_key_env:
-            st.write(f"API Key Prefix: `{api_key_env[:5]}...`")
-        
-        try:
-            import google.genai
-            st.success("google.genai installed ✅")
-        except ImportError:
-            st.error("google.genai NOT installed ❌")
-            
-        if hasattr(st, "secrets"):
-            st.write("st.secrets keys:", list(st.secrets.keys()))
-    # --------------------------------
-
     if orch: # Check if orchestrator is initialized before accessing its state
         # Get available plans
         plans = orch.state.get("plans", {})
