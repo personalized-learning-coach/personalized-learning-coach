@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
+import re
 from personalized_learning_coach.memory.kv_store import append_event, put, get, compact_session
 from personalized_learning_coach.tools.grader_tool import grade_question
 from personalized_learning_coach.utils.llm_client import LLMClient
@@ -10,21 +11,23 @@ from observability.tracer import trace_agent
 logger = get_logger("AssessmentAgent")
 
 class AssessmentAgent:
+    """Agent responsible for generating and grading assessments."""
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.session_ns = f"session:{user_id}"
         self.llm = LLMClient()
 
     def _generate_questions(self, topic: str = "General Knowledge") -> List[Dict[str, Any]]:
+        """Generates diagnostic questions for a given topic."""
         prompt = (
             f"Generate 3 high-quality diagnostic multiple-choice questions for the topic '{topic}'. "
             "Guidelines:\n"
             "1. Questions must be UNAMBIGUOUS and FACTUALLY CORRECT.\n"
             "2. Ensure there is EXACTLY ONE correct answer.\n"
             "3. Distractors must be plausible but clearly incorrect.\n"
-            "4. If using code snippets, ensure they are syntactically correct Python/Java (match the topic).\n"
+            "4. If using code snippets, ensure they are syntactically correct Python/Java.\n"
             "5. Avoid 'trick' questions or questions about obscure trivia.\n"
-            "6. DO NOT mix syntax from different languages (e.g. don't use Java syntax in a Python question).\n"
+            "6. DO NOT mix syntax from different languages.\n"
             "7. Ensure options are mutually exclusive.\n"
             "STRICTLY return a JSON list of objects with keys: qid, prompt, options (dict with keys A,B,C,D), answer (A/B/C/D), explanation. "
             "Do NOT generate open-ended or short-answer questions."
@@ -45,8 +48,7 @@ class AssessmentAgent:
                     questions = json.loads(json_str)
                 except json.JSONDecodeError:
                     # Try to fix common JSON issues if needed, or just fail
-                    logger.warning(f"JSON decode failed on extracted string: {json_str[:50]}...")
-                    pass
+                    logger.warning("JSON decode failed on extracted string: %s...", json_str[:50])
             
             if not isinstance(questions, list):
                  # Fallback: try parsing as markdown code block if not found above
@@ -55,7 +57,7 @@ class AssessmentAgent:
                      if match:
                          try:
                              questions = json.loads(match.group(1))
-                         except:
+                         except json.JSONDecodeError:
                              pass
 
             if isinstance(questions, list):
@@ -67,9 +69,9 @@ class AssessmentAgent:
                         q["qid"] = str(q["qid"]) # Force string
                 return questions
                 
-            logger.error(f"Failed to parse questions. Raw response: {resp}")
-        except Exception as e:
-            logger.error(f"Failed to generate questions: {e}")
+            logger.error("Failed to parse questions. Raw response: %s", resp)
+        except Exception as e: # pylint: disable=broad-exception-caught
+            logger.error("Failed to generate questions: %s", e)
         
         # Fallback (Generic MCQs)
         return [
@@ -91,6 +93,7 @@ class AssessmentAgent:
 
     @trace_agent
     def run(self, payload: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Executes the assessment agent logic."""
         # payload can be None (start), or {"answers": ...} or {"topic": ...}
         if payload is None:
             payload = {}

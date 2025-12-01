@@ -1,10 +1,11 @@
 # personalized_learning_coach/memory/kv_store.py
+"""Simple Key-Value Store for persistence."""
 import json
 import tempfile
 from pathlib import Path
 from threading import Lock
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 BASE = Path(__file__).parent
 STORE_FILE = BASE / "store.json"
@@ -16,7 +17,7 @@ def _now_iso():
 def _ensure_dir():
     try:
         BASE.mkdir(parents=True, exist_ok=True)
-    except Exception:
+    except Exception: # pylint: disable=broad-exception-caught
         pass
 
 def _load() -> Dict[str, Any]:
@@ -26,7 +27,7 @@ def _load() -> Dict[str, Any]:
         try:
             txt = STORE_FILE.read_text(encoding="utf-8")
             return json.loads(txt) if txt.strip() else {}
-        except Exception:
+        except Exception: # pylint: disable=broad-exception-caught
             return {}
 
 def _atomic_write(path: Path, data: str):
@@ -43,12 +44,14 @@ def _save(d: Dict[str, Any]):
         _atomic_write(STORE_FILE, payload)
 
 def put(namespace: str, key: str, value: Any) -> None:
+    """Store a value in the KV store."""
     data = _load()
     data.setdefault(namespace, {})
     data[namespace][key] = value
     _save(data)
 
 def get(namespace: str, key: Optional[str] = None, default: Any = None) -> Any:
+    """Retrieve a value from the KV store."""
     data = _load()
     ns = data.get(namespace)
     if ns is None:
@@ -58,15 +61,22 @@ def get(namespace: str, key: Optional[str] = None, default: Any = None) -> Any:
     return ns.get(key, default)
 
 def query_prefix(namespace: str, prefix: str):
+    """Query keys starting with a prefix."""
     data = _load()
     ns = data.get(namespace, {})
     return {k:v for k,v in ns.items() if k.startswith(prefix)}
 
 def append_event(session_namespace: str, event: Dict[str, Any]) -> None:
+    """Append an event to a session."""
     data = _load()
     session = data.get(session_namespace)
     if not session:
-        session = {"session_id": session_namespace, "created_at": _now_iso(), "events": [], "state": {}}
+        session = {
+            "session_id": session_namespace,
+            "created_at": _now_iso(),
+            "events": [],
+            "state": {}
+        }
     session.setdefault("events", [])
     session.setdefault("state", {})
     ev = dict(event)
@@ -78,6 +88,7 @@ def append_event(session_namespace: str, event: Dict[str, Any]) -> None:
     _save(data)
 
 def compact_session(session_namespace: str, keep_last: int = 5):
+    """Compact session history."""
     data = _load()
     session = data.get(session_namespace, {})
     if not session:
