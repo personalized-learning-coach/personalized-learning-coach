@@ -31,7 +31,10 @@ if "messages" not in st.session_state:
 if "orchestrator" not in st.session_state:
     if ORCHESTRATOR_AVAILABLE:
         try:
-            st.session_state.orchestrator = OrchestratorAgent(user_id="demo_user")
+            if "user_id" not in st.session_state:
+                import uuid
+                st.session_state.user_id = str(uuid.uuid4())
+            st.session_state.orchestrator = OrchestratorAgent(user_id=st.session_state.user_id)
         except Exception as e:
             st.session_state.orchestrator = None
             orchestrator_init_error = e
