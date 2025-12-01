@@ -45,7 +45,7 @@ class MemoryManager:
     def _load_memories(self) -> List[Dict[str, Any]]:
         try:
             return kv_store.get(self.namespace, "items", default=[]) or []
-        except Exception:
+        except Exception: # pylint: disable=broad-exception-caught
             logger.exception("Failed to load memories for %s", self.namespace)
             return []
 
@@ -54,7 +54,7 @@ class MemoryManager:
         try:
             to_store = memories[-MAX_MEMORIES:] if len(memories) > MAX_MEMORIES else list(memories)
             kv_store.put(self.namespace, "items", to_store)
-        except Exception:
+        except Exception: # pylint: disable=broad-exception-caught
             logger.exception("Failed to save memories for %s", self.namespace)
 
     def add_memory(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> None:
@@ -124,7 +124,7 @@ class MemoryManager:
             else:
                 logger.debug("Session has no events property or get_events method")
                 events = []
-        except Exception:
+        except Exception: # pylint: disable=broad-exception-caught
             logger.exception("Error retrieving events from session")
             events = []
 
@@ -142,7 +142,12 @@ class MemoryManager:
             text = ""
             if isinstance(content, dict):
                 # Prefer common text keys, fall back to full content repr
-                text = content.get("text") or content.get("message") or content.get("utterance") or ""
+                text = (
+                    content.get("text") or 
+                    content.get("message") or 
+                    content.get("utterance") or 
+                    ""
+                )
             else:
                 text = str(content or "")
 
@@ -150,26 +155,7 @@ class MemoryManager:
             if not text:
                 continue
 
-            text_lower = text.lower()
-
-            # Simple heuristics for user utterances
-            if role == "user":
-                if any(k in text_lower for k in ("struggle", "struggling", "hard", "difficult", "cant", "can't", "frustrat")):
-                    insight = f"User reported difficulty: {text}"
-                    new_memories.append(insight)
-                if any(k in text_lower for k in ("love", "like", "enjoy", "prefer")):
-                    insight = f"User preference: {text}"
-                    new_memories.append(insight)
-
-            # Agent/tool outputs may contain graded results or metrics
-            if role in ("agent", "system"):
-                if "score" in text_lower or "mastery" in text_lower or "accuracy" in text_lower:
-                    insight = f"Performance record: {text}"
-                    new_memories.append(insight)
-
-                if event.get("type") == "tool_result" and text:
-                    insight = f"Tool result: {text}"
-                    new_memories.append(insight)
+            self._extract_insight(text, role, event.get("type"), new_memories)
 
         # Persist extracted memories, attach source_session when possible
         session_id = getattr(session, "session_id", None) or getattr(session, "id", None)
@@ -180,6 +166,30 @@ class MemoryManager:
             self.add_memory(mem, metadata=meta)
 
         return new_memories
+
+    def _extract_insight(self, text: str, role: str, event_type: str, memories: List[str]):
+        """Helper to extract insights from a single text item."""
+        text_lower = text.lower()
+
+        # Simple heuristics for user utterances
+        if role == "user":
+            if any(k in text_lower for k in ("struggle", "struggling", "hard", "difficult", "cant", "can't", "frustrat")):
+                insight = f"User reported difficulty: {text}"
+                memories.append(insight)
+            if any(k in text_lower for k in ("love", "like", "enjoy", "prefer")):
+                insight = f"User preference: {text}"
+                memories.append(insight)
+
+        # Agent/tool outputs may contain graded results or metrics
+        if role in ("agent", "system"):
+            if "score" in text_lower or "mastery" in text_lower or "accuracy" in text_lower:
+                insight = f"Performance record: {text}"
+                memories.append(insight)
+
+            if event_type == "tool_result" and text:
+                insight = f"Tool result: {text}"
+                memories.append(insight)
+
 
 
 __all__ = ["MemoryManager"]
