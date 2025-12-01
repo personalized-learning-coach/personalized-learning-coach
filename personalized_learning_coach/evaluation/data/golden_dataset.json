@@ -1,0 +1,18 @@
+[
+    {
+        "input": "I am struggling with adding fractions.",
+        "expected_criteria": "The agent should acknowledge the struggle, offer a diagnostic or practice problem related to adding fractions, and be encouraging."
+    },
+    {
+        "input": "Create a weekly plan for me. I want to learn Python.",
+        "expected_criteria": "The agent should generate a structured weekly plan that includes Python basics (variables, loops) and practice exercises."
+    },
+    {
+        "input": "What is 2 + 2?",
+        "expected_criteria": "The agent should answer '4' directly and correctly."
+    },
+    {
+        "input": "I hate math. It's too hard.",
+        "expected_criteria": "The agent should respond with empathy, validating the user's feelings, and offering a strategy to make math more approachable (e.g., breaking it down)."
+    }
+]

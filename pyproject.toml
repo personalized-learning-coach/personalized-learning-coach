@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personalized_learning_coach"
+version = "0.0.1"
+description = "Hybrid ADK-inspired Personalized Learning Coach (capstone)"
+requires-python = ">=3.9"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["personalized_learning_coach*"]
+exclude = ["tests*", "docs*", "deploy*", "prompts*", "evaluation*", "observability*"]

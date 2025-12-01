@@ -1,0 +1,39 @@
+{
+    "name": "personalized_learning_coach",
+    "version": "1.0.0",
+    "description": "An AI Orchestrator that coordinates planning, tutoring, and coaching for personalized learning.",
+    "capabilities": {
+        "planning": "Generates weekly learning plans based on user goals.",
+        "tutoring": "Provides interactive lessons and practice problems.",
+        "coaching": "Tracks progress and offers motivational support."
+    },
+    "securitySchemes": {
+        "defaultInputModes": [
+            "text/plain"
+        ],
+        "defaultOutputModes": [
+            "text/markdown"
+        ],
+        "url": "http://localhost:8501"
+    },
+    "skills": [
+        {
+            "id": "create_plan",
+            "name": "Create Learning Plan",
+            "description": "Generates a structured weekly plan for a given topic.",
+            "tags": [
+                "planning",
+                "education"
+            ]
+        },
+        {
+            "id": "start_lesson",
+            "name": "Start Lesson",
+            "description": "Delivers educational content and examples.",
+            "tags": [
+                "tutoring",
+                "education"
+            ]
+        }
+    ]
+}

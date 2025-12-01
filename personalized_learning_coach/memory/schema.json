@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Personalized Learning Coach Memory Schema",
+  "description": "Schema for session, long-term and procedural memories used by the personalized learning coach.",
+  "type": "object",
+  "properties": {
+    "session_memory": {
+      "type": "object",
+      "description": "Short-lived per-session context",
+      "properties": {
+        "session_id": {"type": "string", "description": "Unique session identifier"},
+        "current_lesson": {"type": ["string", "null"], "description": "ID or title of the current lesson"},
+        "last_question": {"type": ["string", "null"], "description": "Last question asked by the user or tutor"},
+        "recent_responses": {
+          "type": "array",
+          "description": "Most recent assistant/user messages in the session",
+          "items": {"type": "string"},
+          "maxItems": 50
+        },
+        "created_at": {"type": "string", "format": "date-time", "description": "ISO8601 timestamp when session was created"}
+      },
+      "required": ["session_id"]
+    },
+
+    "long_term_memory": {
+      "type": "object",
+      "description": "Persistent user profile and skills",
+      "properties": {
+        "user_id": {"type": "string", "description": "Unique user identifier"},
+        "skill_profiles": {
+          "type": "array",
+          "description": "List of skills and per-skill mastery info",
+          "items": {
+            "type": "object",
+            "properties": {
+              "skill_id": {"type": "string"},
+              "mastery_score": {"type": "number", "minimum": 0, "maximum": 1},
+              "last_practiced": {"type": "string", "format": "date-time"}
+            },
+            "required": ["skill_id", "mastery_score"]
+          }
+        },
+        "weekly_plans": {
+          "type": "array",
+          "description": "Saved weekly curriculum plans",
+          "items": {
+            "type": "object",
+            "properties": {
+              "plan_id": {"type": "string"},
+              "start_date": {"type": "string", "format": "date"},
+              "objectives": {"type": "array", "items": {"type": "string"}}
+            },
+            "required": ["plan_id", "start_date"]
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "learning_style": {"type": "string", "description": "e.g. visual, auditory, kinesthetic"},
+            "daily_available_minutes": {"type": "number", "minimum": 0}
+          }
+        },
+        "updated_at": {"type": "string", "format": "date-time"}
+      },
+      "required": ["user_id"]
+    },
+
+    "procedural_memory": {
+      "type": "object",
+      "description": "Stored methods and templates",
+      "properties": {
+        "lesson_templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "template_id": {"type": "string"},
+              "title": {"type": "string"},
+              "steps": {"type": "array", "items": {"type": "string"}}
+            },
+            "required": ["template_id", "title"]
+          }
+        },
+        "grading_heuristics": {
+          "type": "object",
+          "description": "Heuristics and rules used by the grading tool. Keys should be heuristic names, values are JSON-serializable configs.",
+          "additionalProperties": true
+        },
+        "common_solution_steps": {
+          "type": "object",
+          "description": "Common step sequences for canonical problems keyed by skill/problem id",
+          "additionalProperties": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
