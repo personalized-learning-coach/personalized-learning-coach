@@ -43,9 +43,21 @@ if "messages" not in st.session_state:
 if "orchestrator" not in st.session_state:
     if ORCHESTRATOR_AVAILABLE:
         try:
-            if "user_id" not in st.session_state:
+            # 1. Try to get user_id from URL (persistence across refresh)
+            query_params = st.query_params
+            url_user_id = query_params.get("user_id")
+
+            if url_user_id:
+                st.session_state.user_id = url_user_id
+            elif "user_id" not in st.session_state:
+                # 2. Generate new ID if not in URL or session
                 import uuid
-                st.session_state.user_id = str(uuid.uuid4())
+                new_id = str(uuid.uuid4())
+                st.session_state.user_id = new_id
+                # 3. Save to URL for future refreshes
+                st.query_params["user_id"] = new_id
+            
+            # Initialize Orchestrator with the persistent ID
             st.session_state.orchestrator = OrchestratorAgent(user_id=st.session_state.user_id)
         except Exception as e:
             st.session_state.orchestrator = None
