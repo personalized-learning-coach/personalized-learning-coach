@@ -40,11 +40,10 @@ graph TD
         Orch --> Tutor[Tutor Agent]
         Orch --> Assessor[Assessment Agent]
         Orch --> Progress[Progress Agent]
+        Orch --> Coach[Coach Agent]
     end
     
     subgraph "Tools & Memory"
-        Planner --> Search[Google Search Tool]
-        Tutor --> Search
         Assessor --> Grader[Grading Tool]
         Orch <--> Memory[Persistent Memory Store]
     end
@@ -55,6 +54,7 @@ graph TD
 - **Planner:** Generates structured weekly learning paths (Topics, Objectives).
 - **Tutor:** Delivers content, explains concepts, and answers questions.
 - **Assessment:** Generates quizzes and evaluates user answers.
+- **Progress:** Tracks long-term user journey and session continuity.
 
 ---
 
@@ -71,8 +71,7 @@ The system persists:
 - **Chat History:** Context is preserved per-week, so the agent remembers what you discussed in Week 1 even when you are in Week 3.
 - **Assessment Results:** Weak areas are tracked to recommend reviews.
 
-### 3. Tool Use (Gemini & Custom)
-- **Google Search:** Agents can look up the latest information to ensure lessons are up-to-date.
+### 3. Tool Use (Custom)
 - **Custom Grading Tool:** A deterministic tool to grade multiple-choice questions accurately.
 
 ---
